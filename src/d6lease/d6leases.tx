@@ -1,0 +1,40 @@
+global_block: (statements+=global_statement | ia_nas+=ia_na)*;
+global_statement: (authoring_byte_order | server_duid) ";";
+
+authoring_byte_order: name="authoring-byte-order" value=byte_order;
+server_duid: name="server-duid" value=quoted;
+
+ia_na: "ia-na" iaid_duid=quoted block=ia_na_block;
+ia_na_block: "{" (statements+=ia_na_statement | iaaddrs+=iaaddr)* "}";
+ia_na_statement: (cltt) ";";
+
+cltt: name="cltt" value=date;
+
+iaaddr: "iaaddr" addr=addr block=iaaddr_block;
+iaaddr_block: "{" (statements+=iaaddr_statement)* "}";
+iaaddr_statement:
+  (
+    binding_state | preferred_life | max_life |
+    ends | set
+  ) ";"
+;
+
+binding_state: name=/binding\s+state/ value=/active|expired|released/;
+preferred_life: name="preferred-life" value=seconds;
+max_life: name="max-life" value=seconds;
+ends: name="ends" value=date;
+set: name="set" variable=variable "=" value=quoted;
+
+// basic types
+quoted: '"' value=/(?:[^"\\]|\\.)*/ '"';
+date: weekday=/\d+/ date=/\d+\/\d+\/\d+/ time=/\d+:\d+:\d+/;
+addr: /[a-fA-F\d:]+/;
+seconds: /\d+/;
+variable: /[\w\-]+/;
+byte_order: "little-endian" | "big-endian";
+// NOTE
+// the comment pattern works because it's only attempted after
+// all the other things are tried, which is good because you can
+// actually have # symbols in quoted strings, which would
+// break otherwise
+Comment: /#[^\n]*/;
